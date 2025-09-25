@@ -52,10 +52,11 @@ Mkfile.old
 dkms.conf
 
 # Vscode
-.vscode/settings.json 
-.vscode/settings.json 
+*settings.json  
 
 # Esp-idf 
 build
+CMakeFiles
 
-
+*.clangd
+CMakeCache.txt
