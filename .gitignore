@@ -53,6 +53,7 @@ dkms.conf
 
 # Vscode
 *settings.json  
+*c_cpp_properties.json
 
 # Esp-idf 
 build
