@@ -13,31 +13,31 @@ extern "C" {
 typedef struct spi_handle spi_handle_t; // forward declare
 typedef struct {
     // @brief Malloc and start the bus
-    spi_handle_t* (*open)(int bus, uint32_t freq_hz, int mode);
+    spi_handle_t* (*open)(uint8_t bus, uint32_t freq_hz, uint8_t mode);
     
     // @brief 
     int (*beginTransaction)(spi_handle_t *h);
     void (*endTransaction)(spi_handle_t *h);
     
     // @brief Transmit n bytes 
-    int (*transmit)(spi_handle_t *h, const uint8_t *data, size_t len, uint32_t timeout_ms);
+    int (*write)(spi_handle_t *h, const uint8_t *data, size_t len);
     // @brief Receive n bytes 
-    int (*receive)(spi_handle_t *h, uint8_t *data, size_t len, uint32_t timeout_ms);
+    int (*read)(spi_handle_t *h, uint8_t *data, size_t len);
     // @brief Transfer and receive n bytes 
-    int (*transfer)(spi_handle_t *h, const uint8_t *tx, uint8_t *rx, size_t len, uint32_t timeout_ms);
+    int (*transfer)(spi_handle_t *h, const uint8_t *tx, uint8_t *rx, size_t len);
     // @brief Close and free the bus. 
     void (*close)(spi_handle_t *h);
 } HAL_SPI_t;
 
 // ====================== GPIO ======================
 
-#define LOW 0
-#define HIGH 1
+#define LOW (uint8_t)0u
+#define HIGH (uint8_t)1u
 
 typedef struct {
     int (*config)(int pin, bool output);
     int (*write)(int pin, bool level);
-    int (*read)(int pin);
+    bool (*read)(int pin);
 } HAL_GPIO_t;
 
 // ====================== Sleep ======================

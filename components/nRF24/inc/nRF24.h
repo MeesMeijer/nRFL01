@@ -179,15 +179,23 @@ typedef struct {
 
 extern nrf24_status_t nRF24_init(spi_handle_t *spi, const nrf24_cfg_t *cfg);
 extern nrf24_status_t nRF24_isConnected(bool *connected);
-
-extern nrf24_status_t nRF24_write(const uint8_t *buffer, size_t length);
-extern nrf24_status_t nRF24_fastWrite(const uint8_t *buffer, size_t length);
-
-extern bool nRF24_avalible();
-extern nrf24_status_t nRF24_read(uint8_t *buffer, size_t length);
+extern bool           nRF24_avalible(void);
 
 extern nrf24_status_t nRF24_powerDown(void);
 extern nrf24_status_t nRF24_powerUp(void);
+
+
+extern nrf24_status_t nRF24_openReadingPipe(const uint8_t *address);
+extern nrf24_status_t nRF24_closeReadingPipe(void);
+
+extern nrf24_status_t nRF24_openWritingPipe(uint8_t number);
+extern nrf24_status_t nRF24_closeWritingPipe(void);
+
+
+extern nrf24_status_t nRF24_read(uint8_t *buffer, size_t length);
+extern nrf24_status_t nRF24_write(const uint8_t *buffer, size_t length);
+extern nrf24_status_t nRF24_fastWrite(const uint8_t *buffer, size_t length);
+
 extern nrf24_status_t nRF24_clearStatusFlags();
 extern nrf24_status_t nRF24_getStatusFlags();
 extern nrf24_status_t nRF24_update();
@@ -195,9 +203,6 @@ extern nrf24_status_t nRF24_flushTx();
 extern nrf24_status_t nRF24_flushRx();
 extern nrf24_status_t nRF24_isValid();
 extern nrf24_status_t nRF24_getVariant();
-// extern nrf24_status_t nRF24_closeReadingPipe();
-// extern nrf24_status_t nRF24_openReadingPipe(const uint8_t *address);
-// extern nrf24_status_t nRF24_openWritingPipe(nrf24_t *device, uint8_t number, );
 
 #ifdef __cplusplus
 };

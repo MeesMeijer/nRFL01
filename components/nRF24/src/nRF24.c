@@ -93,12 +93,14 @@ nrf24_status_t nRF24_powerDown(void){
     return NRF24_OK;
 }
 
+
+
 /* Static Functions */
 
 static uint8_t hal_spi_transfer_byte(spi_handle_t *h, uint8_t data) {
     uint8_t tx[1] = { data };
     uint8_t rx[1] = { 0 };
-    machine->spi.transfer(h, tx, rx, 1, 0);
+    machine->spi.transfer(h, tx, rx, 1);
     return rx[0];
 }
 
@@ -169,7 +171,7 @@ static nrf24_status_t _readRegister(uint8_t reg, uint8_t *result){
     *ptx++ = reg;
     *ptx++ = RF24_NOP; // Dummy operation, just for reading
 
-    machine->spi.transfer(_spi, (const uint8_t*)ptx, prx, 2, 0);
+    machine->spi.transfer(_spi, (const uint8_t*)ptx, prx, 2);
 
     status = *prx;   // status is 1st byte of receive buffer
     *result = *++prx; // result is 2nd byte of receive buffer
@@ -193,7 +195,7 @@ static nrf24_status_t _readRegisternb(uint8_t reg, uint8_t *buffer, size_t lengt
         *ptx++ = RF24_NOP; // Dummy operation, just for reading
     }
 
-    machine->spi.transfer(_spi, (const uint8_t *)ptx, prx, size, 0);
+    machine->spi.transfer(_spi, (const uint8_t *)ptx, prx, size);
 
     status = *prx++;
  
@@ -219,7 +221,7 @@ static nrf24_status_t _writeRegister(uint8_t reg, const uint8_t value){
     *ptx++ = (W_REGISTER | reg);
     *ptx = value;
 
-    int a = machine->spi.transfer(_spi, (const uint8_t *)ptx, prx, 2, 0);
+    int a = machine->spi.transfer(_spi, (const uint8_t *)ptx, prx, 2);
     printf("SPI transfer returned: %d\n", a);
     
     _endTransaction();
@@ -240,7 +242,7 @@ static nrf24_status_t _writeRegisternb(uint8_t reg, const uint8_t* buffer, uint8
         *ptx++ = *buffer++;
     }
 
-    machine->spi.transfer(_spi, (const uint8_t *)ptx, prx, size, 0);
+    machine->spi.transfer(_spi, (const uint8_t *)ptx, prx, size);
 
     status = *prx; // status is 1st byte of receive buffer
     _endTransaction();

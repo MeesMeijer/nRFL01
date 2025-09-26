@@ -11,9 +11,13 @@ struct spi_handle {
     spi_device_handle_t dev;
 };
 
-static spi_handle_t* spi_open(int bus, uint32_t freq_hz, int mode) {
+static spi_handle_t* spi_open(uint8_t bus, uint32_t freq_hz, uint8_t mode) {
     if (bus >= SPI_HOST_MAX){
         return NULL;
+    }
+
+    if (mode > 3){
+        return NULL; 
     }
 
     spi_bus_config_t buscfg = {
@@ -31,12 +35,8 @@ static spi_handle_t* spi_open(int bus, uint32_t freq_hz, int mode) {
         .queue_size = 1,
     };
 
-    static int initialized = 0;
-    if (!initialized) {
-        /* Because the spi messages are going to be short. Disable DMA to limit overhead */
-        spi_bus_initialize(bus, &buscfg, SPI_DMA_DISABLED);
-        initialized = 1;
-    }
+    /* Because the spi messages are going to be short. Disable DMA to limit Queue overhead */
+    spi_bus_initialize(bus, &buscfg, SPI_DMA_DISABLED);
 
     spi_handle_t *h = malloc(sizeof(spi_handle_t));
     spi_bus_add_device(bus, &devcfg, &h->dev);
@@ -51,23 +51,23 @@ static void spi_end_transaction(spi_handle_t *h){
     return spi_device_release_bus(h->dev);
 }
 
-static int spi_transmit(spi_handle_t *h, const uint8_t *data, size_t len, uint32_t timeout_ms) {
-    spi_transaction_t t = { .length = len * 8, .tx_buffer = data };
+static int spi_write(spi_handle_t *h, const uint8_t *data, size_t len) {
+    spi_transaction_t t = { .length = len * 8, .tx_buffer = data, .rx_buffer = NULL};
     return spi_device_transmit(h->dev, &t);
 }
 
-static int spi_receive(spi_handle_t *h, uint8_t *data, size_t len, uint32_t timeout_ms) {
-    spi_transaction_t t = { .length = len * 8, .rx_buffer = data };
+static int spi_read(spi_handle_t *h, uint8_t *data, size_t len) {
+    spi_transaction_t t = { .length = len * 8, .tx_buffer = NULL, .rx_buffer = data };
     return spi_device_transmit(h->dev, &t);
 }
 
-static int spi_transmit_receive(spi_handle_t *h, const uint8_t *tx, uint8_t *rx, size_t len, uint32_t timeout_ms) {
+static int spi_transfer(spi_handle_t *h, const uint8_t *tx, uint8_t *rx, size_t len) {
     spi_transaction_t t = { .length = len * 8, .tx_buffer = tx, .rx_buffer = rx };
     return spi_device_transmit(h->dev, &t);
 }
 
 static void spi_close(spi_handle_t *h) {
-    if (h) {
+    if (h != NULL) {
         spi_bus_remove_device(h->dev);
         free(h);
     }
@@ -87,8 +87,8 @@ static int gpio_write(int pin, bool level) {
     return gpio_set_level(pin, level);
 }
 
-static int gpio_read(int pin) {
-    return gpio_get_level(pin);
+static bool gpio_read(int pin) {
+    return (bool)gpio_get_level(pin);
 }
 
 // Sleep
@@ -100,20 +100,20 @@ static void sleep_ms(uint32_t ms) {
 static const machine_t idf_machine = {
     .spi   = { 
         .open       = spi_open, 
-        .transmit   = spi_transmit, 
+        .write   = spi_write, 
         .beginTransaction = spi_begin_transaction,
         .endTransaction   = spi_end_transaction,
-        .receive    =  spi_receive, 
-        .transfer   = spi_transmit_receive, 
+        .read    =  spi_read, 
+        .transfer   = spi_transfer, 
         .close      = spi_close 
     },
     .gpio  = { 
-        gpio_configure, 
-        gpio_write, 
-        gpio_read 
+        .config = gpio_configure, 
+        .write  = gpio_write, 
+        .read   = gpio_read 
     },
     .sleep = { 
-        sleep_ms 
+        .ms     = sleep_ms 
     }
 };
 
