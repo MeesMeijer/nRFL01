@@ -13,6 +13,7 @@
 static nrf24_status_t _initRadio();
 static nrf24_status_t _beginTransaction();
 static nrf24_status_t _endTransaction();
+static nrf24_status_t _toggleFeatures(void);
 
 static nrf24_status_t _readRegister(uint8_t req, uint8_t *result);
 static nrf24_status_t _readRegisternb(uint8_t req, uint8_t *buffer, size_t length);
@@ -97,13 +98,6 @@ nrf24_status_t nRF24_powerDown(void){
 
 /* Static Functions */
 
-static uint8_t hal_spi_transfer_byte(spi_handle_t *h, uint8_t data) {
-    uint8_t tx[1] = { data };
-    uint8_t rx[1] = { 0 };
-    machine->spi.transfer(h, tx, rx, 1);
-    return rx[0];
-}
-
 static nrf24_status_t _initRadio() {
     uint8_t status     = 0u; 
 
@@ -119,13 +113,7 @@ static nrf24_status_t _initRadio() {
     printf("[nRF24] _initRadio: FEATURE before toggle: 0x%02X\n", before_toggle);
    
     /* Toggle features */
-    _beginTransaction();
-    // machine->spi.transfer(_spi, (uint8_t *)ACTIVATE, &status, 1, 0);
-    status = hal_spi_transfer_byte(_spi, ACTIVATE);
-    // uint8_t t = 0; 
-    // machine->spi.transfer(_spi, (uint8_t *)0x73, &t, 1, 0);
-    hal_spi_transfer_byte(_spi, 0x73);
-    _endTransaction();
+    (void)_toggleFeatures();
 
     uint8_t after_toggle;
     (void)_readRegister(FEATURE, &after_toggle);
@@ -135,13 +123,7 @@ static nrf24_status_t _initRadio() {
     if (after_toggle) {
         if (_is_p_variant) {
             // module did not experience power-on-reset (#401)
-            _beginTransaction();
-            // machine->spi.transfer(_spi, (uint8_t *)ACTIVATE, &status, 1, 0);
-            status = hal_spi_transfer_byte(_spi, ACTIVATE);
-            // uint8_t t = 0; 
-            // machine->spi.transfer(_spi, (uint8_t *)0x73, &t, 1, 0);
-            hal_spi_transfer_byte(_spi, 0x73);
-            _endTransaction();
+            (void)_toggleFeatures();
         }
         // allow use of multicast parameter and dynamic payloads by default
         _writeRegister(FEATURE, 0);
@@ -161,6 +143,17 @@ static nrf24_status_t _initRadio() {
     return (config_reg == (_BV(EN_CRC) | _BV(CRCO) | _BV(PWR_UP))) ? NRF24_OK : NRF24_ERROR;
 }
 
+static nrf24_status_t _toggleFeatures(void){
+    uint8_t status = 0u; 
+    _beginTransaction();
+
+    uint8_t tx[2] = {ACTIVATE, 0x73}; 
+    machine->spi.transfer(_spi, &tx, &status, sizeof(tx));
+    
+    _endTransaction();
+
+    return NRF24_OK;
+}
 
 static nrf24_status_t _readRegister(uint8_t reg, uint8_t *result){
     uint8_t status = 0; 

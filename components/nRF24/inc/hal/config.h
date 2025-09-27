@@ -13,6 +13,4 @@
     #define USE_ESP_IDF
 #endif 
 
-
-
 #endif 
