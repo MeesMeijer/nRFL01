@@ -36,29 +36,29 @@ nrf24_cfg_t config = {
     .channel      = 100,
     .crc          = NRF24_CRC_8,
     .datarate     = NRF24_1MBPS,
-    .addressWidth = 5    
+    .addressWidth = 5,
+    .gpio = {
+        .ce = 4u,
+        .csn = 5u
+    }    
 };
 
 extern const machine_t *machine; 
 static spi_handle_t *_spi2;  
 
 void app_main(void){
-    bool isConnected = false;
-
-    hal_init(&machine);
-
-    _spi2 = machine->spi.open(2, 1*1000*1000, 0);
-
-    nrf24_status_t stat = nRF24_init(_spi2, &config);
-    
-    printf("nRF24_Init returned: %d\n", stat);
-
     vTaskDelay(15);
 
+    bool isConnected = false;
+    hal_init(&machine);
+
+    _spi2 = machine->spi.open(2, 10*1000*1000, 0);
+    nrf24_status_t stat = nRF24_init(_spi2, &config);
+    printf("[main] - nRF24_Init returned: %d\n", stat);
+    
     while (true){
         (void)nRF24_isConnected(&isConnected);
-        printf("Is avalible %d\n", isConnected);
-        vTaskDelay(1000);
+        printf("[main] - isConnected: %d\n", isConnected);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
-   
 };

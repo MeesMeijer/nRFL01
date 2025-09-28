@@ -87,7 +87,9 @@ typedef enum
     /** (1) represents 2 Mbps */
     NRF24_2MBPS,
     /** (2) represents 250 kbps */
-    NRF24_250KBPS
+    NRF24_250KBPS,
+    /*  (3) Have a max rate item for debugging. */
+    NRF24_MAX_RATE
 } nrf24_datarate_t;
 
 /**
@@ -184,6 +186,10 @@ extern bool           nRF24_avalible(void);
 extern nrf24_status_t nRF24_powerDown(void);
 extern nrf24_status_t nRF24_powerUp(void);
 
+extern nrf24_status_t nRF24_setChannel(uint8_t channel);
+extern nrf24_status_t nRF24_setAddressWidth(uint8_t size);
+extern nrf24_status_t nRF24_setPayloadSize(uint8_t size);
+extern nrf24_status_t nRF24_setRetries(uint8_t delay, uint8_t count);
 
 extern nrf24_status_t nRF24_openReadingPipe(const uint8_t *address);
 extern nrf24_status_t nRF24_closeReadingPipe(void);
@@ -199,8 +205,8 @@ extern nrf24_status_t nRF24_fastWrite(const uint8_t *buffer, size_t length);
 extern nrf24_status_t nRF24_clearStatusFlags();
 extern nrf24_status_t nRF24_getStatusFlags();
 extern nrf24_status_t nRF24_update();
-extern nrf24_status_t nRF24_flushTx();
 extern nrf24_status_t nRF24_flushRx();
+extern nrf24_status_t nRF24_flushTx();
 extern nrf24_status_t nRF24_isValid();
 extern nrf24_status_t nRF24_getVariant();
 

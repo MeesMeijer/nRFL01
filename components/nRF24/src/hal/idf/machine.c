@@ -26,8 +26,13 @@ static spi_handle_t* spi_open(uint8_t bus, uint32_t freq_hz, uint8_t mode) {
         .sclk_io_num = 18,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
+        .data4_io_num =  -1,
+        .data5_io_num =  -1,
+        .data6_io_num =  -1,
+        .data7_io_num =  -1,
         .max_transfer_sz = 32 + 1,
     };
+
     spi_device_interface_config_t devcfg = {
         .clock_speed_hz = freq_hz,
         .mode = mode,
@@ -36,34 +41,42 @@ static spi_handle_t* spi_open(uint8_t bus, uint32_t freq_hz, uint8_t mode) {
     };
 
     /* Because the spi messages are going to be short. Disable DMA to limit Queue overhead */
-    spi_bus_initialize(bus, &buscfg, SPI_DMA_DISABLED);
+    ESP_ERROR_CHECK(spi_bus_initialize(bus, &buscfg, SPI_DMA_DISABLED));
 
     spi_handle_t *h = malloc(sizeof(spi_handle_t));
-    spi_bus_add_device(bus, &devcfg, &h->dev);
+    ESP_ERROR_CHECK(spi_bus_add_device(bus, &devcfg, &h->dev));
     return h;
 }
 
 static int spi_begin_transaction(spi_handle_t *h){
-    return spi_device_acquire_bus(h->dev, portMAX_DELAY);
+    esp_err_t error = spi_device_acquire_bus(h->dev, portMAX_DELAY);
+    ESP_ERROR_CHECK(error);
+    return error;  
 }
 
 static void spi_end_transaction(spi_handle_t *h){
-    return spi_device_release_bus(h->dev);
+    (void)spi_device_release_bus(h->dev);
 }
 
 static int spi_write(spi_handle_t *h, const uint8_t *data, size_t len) {
     spi_transaction_t t = { .length = len * 8, .tx_buffer = data, .rx_buffer = NULL};
-    return spi_device_transmit(h->dev, &t);
+    esp_err_t error = spi_device_transmit(h->dev, &t);
+    ESP_ERROR_CHECK(error);
+    return error;  
 }
 
 static int spi_read(spi_handle_t *h, uint8_t *data, size_t len) {
     spi_transaction_t t = { .length = len * 8, .tx_buffer = NULL, .rx_buffer = data };
-    return spi_device_transmit(h->dev, &t);
+    esp_err_t error = spi_device_transmit(h->dev, &t);
+    ESP_ERROR_CHECK(error);
+    return error;  
 }
 
 static int spi_transfer(spi_handle_t *h, const uint8_t *tx, uint8_t *rx, size_t len) {
     spi_transaction_t t = { .length = len * 8, .tx_buffer = tx, .rx_buffer = rx };
-    return spi_device_transmit(h->dev, &t);
+    esp_err_t error = spi_device_transmit(h->dev, &t);
+    ESP_ERROR_CHECK(error);
+    return error;  
 }
 
 static void spi_close(spi_handle_t *h) {
@@ -77,8 +90,7 @@ static void spi_close(spi_handle_t *h) {
 static int gpio_configure(int pin, bool output) {
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << pin),
-        .mode = output ? GPIO_MODE_OUTPUT : GPIO_MODE_INPUT,
-        .intr_type = GPIO_INTR_DISABLE
+        .mode = output ? GPIO_MODE_OUTPUT : GPIO_MODE_INPUT
     };
     return gpio_config(&io_conf);
 }
