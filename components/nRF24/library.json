@@ -1,11 +1,11 @@
 {
     "name": "nRFL01",
-    "keywords": "",
-    "description": "",
+    "keywords": "rf, radio, spi, wireless, component",
+    "description": "An API driven nRF24L01(+) driver that is created in the eye of porting.",
     "license": "",
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/MeesMeijer/nRFL01"
     },
     "export": {
         "exclude": [
@@ -13,6 +13,7 @@
             "src/hal/stm32/machine.c"
         ]
     },
+    "frameworks": ["arduino", "espidf"],
     "platforms": [
         "espressif32",
         "ststm32"
