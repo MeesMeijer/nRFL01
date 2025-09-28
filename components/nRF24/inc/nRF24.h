@@ -18,6 +18,13 @@ extern "C" {
 #define rf24_max(a, b) ((a) > (b) ? (a) : (b))
 #define rf24_min(a, b) ((a) < (b) ? (a) : (b))
 
+#define NRF24_MAX_PAYLOAD_SIZE 32u 
+#define NRF24_MAX_RF_CHANNEL   126u
+
+#define NRF25_MAX_ADDRESS_WIDTH 5u 
+#define NRF25_MIN_ADDRESS_WIDTH 3u 
+
+
 typedef enum {
     NRF24_OK, 
     NRF24_ERROR, 
@@ -107,7 +114,8 @@ typedef enum
     /** (1) represents CRC 8 bit checksum is used */
     NRF24_CRC_8,
     /** (2) represents CRC 16 bit checksum is used */
-    NRF24_CRC_16
+    NRF24_CRC_16,
+    NRF24_CRC_ERROR,
 } nrf24_crclength_t;
 
 /**
@@ -146,31 +154,29 @@ typedef enum
 } nrf24_irq_flags_t;
 
 
-
 typedef struct {
     uint8_t addressWidth;
     uint8_t payloadSize; 
     uint8_t channel;
     nrf24_datarate_t datarate;
-    
-    bool    enableDynamicPayloads;
-    uint8_t retries; 
+    nrf24_crclength_t crc; 
+
+    bool    dynamicPayloads;
 
     struct {
+        uint8_t delay;
+        uint8_t count;
+    } retries; 
+    struct {
+        bool dynamicAck; 
         bool ackPayload; 
         bool autoAck; 
     } ack; 
-
-    nrf24_crclength_t crc; 
-
-    struct 
-    {
+    struct {
         uint8_t level;
         bool lnaEnabled; 
     } PA;
-
-    struct 
-    {   
+    struct {   
         // @brief Chip Select (Inverted)
         int csn;
         // @brief Chip Enable 
@@ -178,10 +184,22 @@ typedef struct {
     } gpio;
 } nrf24_cfg_t;
 
+#define NRF24_DEFAULT_CFG(_csn, _ce) { \
+    .addressWidth = NRF25_MAX_ADDRESS_WIDTH, \
+    .payloadSize = NRF24_MAX_PAYLOAD_SIZE, \
+    .channel = 76u, \
+    .datarate = NRF24_1MBPS, \
+    .dynamicPayloads = false, \
+    .retries = { .delay = 5u, .count = 15u }, \
+    .ack = { .ackPayload = false, .autoAck = true }, \
+    .crc = NRF24_CRC_16, \
+    .PA = { .level = NRF24_PA_MIN, .lnaEnabled = true }, \
+    .gpio = { .csn = _csn, .ce = _ce } \
+}
 
 extern nrf24_status_t nRF24_init(spi_handle_t *spi, const nrf24_cfg_t *cfg);
 extern nrf24_status_t nRF24_isConnected(bool *connected);
-extern bool           nRF24_avalible(void);
+extern bool           nRF24_available(void);
 
 extern nrf24_status_t nRF24_powerDown(void);
 extern nrf24_status_t nRF24_powerUp(void);
@@ -190,17 +208,25 @@ extern nrf24_status_t nRF24_setChannel(uint8_t channel);
 extern nrf24_status_t nRF24_setAddressWidth(uint8_t size);
 extern nrf24_status_t nRF24_setPayloadSize(uint8_t size);
 extern nrf24_status_t nRF24_setRetries(uint8_t delay, uint8_t count);
+extern nrf24_status_t nRF24_setPALevel(nrf24_pa_dbm_t level, bool enableLna);
+extern nrf24_status_t nRF24_setCrcLength(nrf24_crclength_t length);
+extern nrf24_status_t nRF24_setAutoAck(bool enable);
+extern nrf24_status_t nRF24_setAckPayload(bool enable);
+extern nrf24_status_t nRF24_setDynamicPayloadLength(bool enable);
+extern nrf24_status_t nRF24_setDynamicAck(bool enable);
 
-extern nrf24_status_t nRF24_openReadingPipe(const uint8_t *address);
-extern nrf24_status_t nRF24_closeReadingPipe(void);
+extern nrf24_status_t nRF24_openReadingPipe(uint8_t pipe, const uint8_t *address);
+extern nrf24_status_t nRF24_closeReadingPipe(uint8_t pipe);
 
-extern nrf24_status_t nRF24_openWritingPipe(uint8_t number);
+extern nrf24_status_t nRF24_openWritingPipe(const uint8_t *address);
 extern nrf24_status_t nRF24_closeWritingPipe(void);
 
+extern nrf24_status_t nRF24_startListening(void);
+extern nrf24_status_t nRF24_stopListening(void); 
 
-extern nrf24_status_t nRF24_read(uint8_t *buffer, size_t length);
-extern nrf24_status_t nRF24_write(const uint8_t *buffer, size_t length);
-extern nrf24_status_t nRF24_fastWrite(const uint8_t *buffer, size_t length);
+extern nrf24_status_t nRF24_read(void *buffer, uint8_t length);
+extern nrf24_status_t nRF24_write(const void *buffer, uint8_t length, const bool multicast);
+extern nrf24_status_t nRF24_fastWrite(const void *buffer, uint8_t length, const bool multicast);
 
 extern nrf24_status_t nRF24_clearStatusFlags();
 extern nrf24_status_t nRF24_getStatusFlags();

@@ -43,6 +43,7 @@ typedef struct {
 // ====================== Sleep ======================
 typedef struct {
     void (*ms)(uint32_t ms);
+    uint32_t (*millis)(void);
 } HAL_Sleep_t;
 
 // ====================== Machine Root ======================

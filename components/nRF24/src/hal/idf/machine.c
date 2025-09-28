@@ -6,6 +6,7 @@
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_timer.h"
 
 struct spi_handle {
     spi_device_handle_t dev;
@@ -30,7 +31,7 @@ static spi_handle_t* spi_open(uint8_t bus, uint32_t freq_hz, uint8_t mode) {
         .data5_io_num =  -1,
         .data6_io_num =  -1,
         .data7_io_num =  -1,
-        .max_transfer_sz = 32 + 1,
+        .max_transfer_sz = 256,
     };
 
     spi_device_interface_config_t devcfg = {
@@ -105,10 +106,14 @@ static bool gpio_read(int pin) {
 
 // Sleep
 static void sleep_ms(uint32_t ms) {
-    vTaskDelay(ms / portTICK_PERIOD_MS);
+    vTaskDelay(pdMS_TO_TICKS(ms));
 }
 
-    // Assembled machine
+static uint32_t millis(){
+    return (uint32_t)(esp_timer_get_time() / 1000L);
+}
+
+// Assembled machine
 static const machine_t idf_machine = {
     .spi   = { 
         .open       = spi_open, 
@@ -125,7 +130,8 @@ static const machine_t idf_machine = {
         .read   = gpio_read 
     },
     .sleep = { 
-        .ms     = sleep_ms 
+        .ms     = sleep_ms,
+        .millis = millis
     }
 };
 
