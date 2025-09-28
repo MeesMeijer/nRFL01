@@ -79,7 +79,7 @@ static machine_t arduino_machine = {
     .sleep = { sleep_ms }
 };
 
-extern void hal_init(machine_t *machine){
+extern void nRF24_halInit(machine_t *machine){
     *machine = arduino_machine;
 }
 

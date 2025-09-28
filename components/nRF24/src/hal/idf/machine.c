@@ -131,7 +131,7 @@ static const machine_t idf_machine = {
 
 const machine_t *machine = NULL;   // <-- actual definition
 
-extern void hal_init(const machine_t **machine){
+extern void nRF24_halInit(const machine_t **machine){
     if (machine == NULL){
         return; 
     }

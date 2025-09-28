@@ -93,7 +93,7 @@ static machine_t stm32_machine = {
     .sleep = { sleep_ms }
 };
 
-extern void hal_init(machine_t *machine){
+extern void nRF24_halInit(machine_t *machine){
     *machine = stm32_machine;
 }
 

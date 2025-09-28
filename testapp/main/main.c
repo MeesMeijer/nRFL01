@@ -50,10 +50,12 @@ void app_main(void){
     vTaskDelay(15);
 
     bool isConnected = false;
-    hal_init(&machine);
+    
+    (void)nRF24_halInit(&machine);
 
     _spi2 = machine->spi.open(2, 10*1000*1000, 0);
     nrf24_status_t stat = nRF24_init(_spi2, &config);
+    
     printf("[main] - nRF24_Init returned: %d\n", stat);
     
     while (true){

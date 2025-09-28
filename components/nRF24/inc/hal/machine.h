@@ -54,7 +54,7 @@ typedef struct {
 
 extern const machine_t *machine;
 
-extern void hal_init(const machine_t **machine);
+extern void nRF24_halInit(const machine_t **machine);
 
 #ifdef __cplusplus
 }
