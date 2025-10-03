@@ -1,6 +1,5 @@
-# if(NOT IDF_PATH)
-#     return()
-# endif()
+
+# Decide which platform to build for. 
 
 if(ESP_PLATFORM)
 idf_component_register(
@@ -13,5 +12,5 @@ idf_component_register(
         esp_driver_spi esp_driver_gpio esp_timer
 )
 else()
-# This is NOT esp-idf
+
 endif()
