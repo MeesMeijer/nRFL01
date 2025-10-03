@@ -4,8 +4,6 @@
 /* Define the wrapper to use.  */
 #if defined(__CC_ARM)
 #define USE_STM32
-#elif defined(ARDUINO)
-#define USE_ARDUINO
 #elif defined(ESP_PLATFORM) 
 #define USE_ESP_IDF
 #else 
