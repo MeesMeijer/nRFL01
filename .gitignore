@@ -61,3 +61,10 @@ CMakeFiles
 
 *.clangd
 CMakeCache.txt
+
+
+# Stm Cmake
+*/stm32/*/*/cmake
+*/stm32/*/*/Drivers
+*/stm32/*/*/.vscode
+*/stm32/*/*/CMakePresets.json
