@@ -4,12 +4,21 @@
 #ifdef USE_ESP_IDF
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
+#include "driver/gptimer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_timer.h"
 
 struct spi_handle {
     spi_device_handle_t dev;
+};
+
+/* Timer used for sub ms delays.. */
+static gptimer_handle_t htimer = NULL;
+static gptimer_config_t htimer_config = {
+    .clk_src = GPTIMER_CLK_SRC_DEFAULT,
+    .direction = GPTIMER_COUNT_UP,
+    .resolution_hz = 1 * 1000 * 1000, /* 1 MHZ */
 };
 
 static spi_handle_t* spi_open(uint8_t bus, uint32_t freq_hz, uint8_t mode) {
@@ -87,26 +96,39 @@ static void spi_close(spi_handle_t *h) {
     }
 }
 
-// GPIO
-static int gpio_configure(int pin, bool output) {
+/* Begin: Machine->gpio */
+static int gpio_configure(uint8_t pin, bool output) {
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << pin),
         .mode = output ? GPIO_MODE_OUTPUT : GPIO_MODE_INPUT
     };
     return gpio_config(&io_conf);
 }
-
-static int gpio_write(int pin, bool level) {
+static int gpio_write(uint8_t pin, bool level) {
     return gpio_set_level(pin, level);
 }
-
-static bool gpio_read(int pin) {
+static bool gpio_read(uint8_t pin) {
     return (bool)gpio_get_level(pin);
 }
+/* End: Machine->gpio */
 
-// Sleep
+/* Begin: Machine->sleep */
+static void sleep_setup(void){
+    ESP_ERROR_CHECK(gptimer_new_timer(&htimer_config, &htimer));
+    ESP_ERROR_CHECK(gptimer_enable(htimer));
+    ESP_ERROR_CHECK(gptimer_start(htimer));
+}
 static void sleep_ms(uint32_t ms) {
     vTaskDelay(pdMS_TO_TICKS(ms));
+}
+static void sleep_us(uint32_t us) {
+    uint64_t start = 0u;
+    uint64_t count = 0u;
+    
+    (void)gptimer_get_raw_count(htimer, &start);
+    while ((count - start) < (uint64_t)us){
+        (void)gptimer_get_raw_count(htimer, &count);
+    }
 }
 
 static uint32_t millis(){
@@ -117,10 +139,10 @@ static uint32_t millis(){
 static const machine_t idf_machine = {
     .spi   = { 
         .open       = spi_open, 
-        .write   = spi_write, 
+        .write      = spi_write, 
         .beginTransaction = spi_begin_transaction,
         .endTransaction   = spi_end_transaction,
-        .read    =  spi_read, 
+        .read       =  spi_read, 
         .transfer   = spi_transfer, 
         .close      = spi_close 
     },
@@ -131,6 +153,9 @@ static const machine_t idf_machine = {
     },
     .sleep = { 
         .ms     = sleep_ms,
+        .us     = sleep_us,
+    },
+    .time = {
         .millis = millis
     }
 };
@@ -141,6 +166,9 @@ extern void nRF24_halInit(const machine_t **machine){
     if (machine == NULL){
         return; 
     }
+
+    /* Enable any hal_ functions */
+    (void)sleep_setup();
 
     *machine = &idf_machine;
 }

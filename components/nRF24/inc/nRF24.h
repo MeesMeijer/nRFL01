@@ -21,8 +21,8 @@ extern "C" {
 #define NRF24_MAX_PAYLOAD_SIZE 32u 
 #define NRF24_MAX_RF_CHANNEL   126u
 
-#define NRF25_MAX_ADDRESS_WIDTH 5u 
-#define NRF25_MIN_ADDRESS_WIDTH 3u 
+#define NRF24_MAX_ADDRESS_WIDTH 5u 
+#define NRF24_MIN_ADDRESS_WIDTH 3u 
 
 
 typedef enum {
@@ -178,14 +178,14 @@ typedef struct {
     } PA;
     struct {   
         // @brief Chip Select (Inverted)
-        int csn;
+        uint8_t csn;
         // @brief Chip Enable 
-        int ce;
+        uint8_t ce;
     } gpio;
 } nrf24_cfg_t;
 
 #define NRF24_DEFAULT_CFG(_csn, _ce) { \
-    .addressWidth = NRF25_MAX_ADDRESS_WIDTH, \
+    .addressWidth = NRF24_MAX_ADDRESS_WIDTH, \
     .payloadSize = NRF24_MAX_PAYLOAD_SIZE, \
     .channel = 76u, \
     .datarate = NRF24_1MBPS, \
@@ -214,6 +214,7 @@ extern nrf24_status_t nRF24_setAutoAck(bool enable);
 extern nrf24_status_t nRF24_setAckPayload(bool enable);
 extern nrf24_status_t nRF24_setDynamicPayloadLength(bool enable);
 extern nrf24_status_t nRF24_setDynamicAck(bool enable);
+extern nrf24_status_t nRF24_setDataRate(nrf24_datarate_t rate);
 
 extern nrf24_status_t nRF24_openReadingPipe(uint8_t pipe, const uint8_t *address);
 extern nrf24_status_t nRF24_closeReadingPipe(uint8_t pipe);

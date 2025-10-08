@@ -1,9 +1,10 @@
 #include "stdint.h"
 #include "stdbool.h"
-#include "stddef.h"
+#include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
 
+#include "inc/hal/config.h"
 #include "inc/hal/machine.h"
 
 #include "inc/nRF24L01.h"
@@ -79,21 +80,21 @@ nrf24_status_t nRF24_init(spi_handle_t *spi, const nrf24_cfg_t *cfg){
         /* Init the NRF24 */
         _spi = spi;
         _cfg = (nrf24_cfg_t *)cfg; 
-
+        
         machine->gpio.config(_cfg->gpio.ce, true);
         machine->gpio.config(_cfg->gpio.csn, true);
         
-        ce(LOW);
+        (void)ce(LOW);
         /* Let the CE Settle */
         machine->sleep.ms(5);
         
-        csn(HIGH);
+        (void)csn(HIGH);
 
-        tx_buffer = (uint8_t *)malloc(sizeof(uint8_t) * NRF24_MAX_PAYLOAD_SIZE + 1);
-        rx_buffer = (uint8_t *)malloc(sizeof(uint8_t) * NRF24_MAX_PAYLOAD_SIZE + 1);
+        tx_buffer = (uint8_t *)malloc(sizeof(uint8_t) * NRF24_MAX_PAYLOAD_SIZE + 1u);
+        rx_buffer = (uint8_t *)malloc(sizeof(uint8_t) * NRF24_MAX_PAYLOAD_SIZE + 1u);
         
-        pipe0_cfg.readAddress =  (uint8_t *)malloc(sizeof(uint8_t) * 5);
-        pipe0_cfg.writeAddress = (uint8_t *)malloc(sizeof(uint8_t) * 5);
+        pipe0_cfg.readAddress =  (uint8_t *)malloc(sizeof(uint8_t) * 5u);
+        pipe0_cfg.writeAddress = (uint8_t *)malloc(sizeof(uint8_t) * 5u);
 
         status = _initRadio();
     }
@@ -102,14 +103,15 @@ nrf24_status_t nRF24_init(spi_handle_t *spi, const nrf24_cfg_t *cfg){
 
 
 nrf24_status_t nRF24_isConnected(bool *connected) {
-    uint8_t result = 0u; 
+    nrf24_status_t status = NRF24_OK;
+    uint8_t        result = 0u; 
 
-    (void)_readRegister(SETUP_AW, &result);
+    status = _readRegister(SETUP_AW, &result);
     /* + 2 because the AddressWidth is stored -2 within NRF24 
         See nRF24_setAddressWidth for more info. */
     *connected = ((result + 2u) == _cfg->addressWidth);
 
-    return NRF24_OK;
+    return status;
 };
 
 bool nRF24_available(void) {
@@ -163,14 +165,14 @@ nrf24_status_t nRF24_setPayloadSize(uint8_t size){
         _cfg->payloadSize = size; 
     }
 
-    return NRF24_OK;
+    return status;
 };
 
 
 nrf24_status_t nRF24_setAddressWidth(uint8_t size){
     nrf24_status_t status = NRF24_OK;
 
-    if ((size < NRF25_MIN_ADDRESS_WIDTH) || (size > NRF25_MAX_ADDRESS_WIDTH)) {
+    if ((size < NRF24_MIN_ADDRESS_WIDTH) || (size > NRF24_MAX_ADDRESS_WIDTH)) {
         status = NRF24_ARG_INVALID;
     } else {
         /* SETUP_AW register expects: 0x01 for 3 bytes, 0x02 for 4 bytes, 0x03 for 5 bytes */
@@ -183,7 +185,7 @@ nrf24_status_t nRF24_setAddressWidth(uint8_t size){
         _cfg->addressWidth = size;
     }
 
-    return NRF24_OK;
+    return status;
 }
 
 nrf24_status_t nRF24_setRetries(uint8_t delay, uint8_t count){
@@ -492,12 +494,12 @@ nrf24_status_t nRF24_setDynamicAck(bool enable){
 }
 
 nrf24_status_t nRF24_flushRx(){
-    (void)printf("[NRF24] - Flushing RX\n");
+    (void)printf("[NRF24] - Flushing RX\r\n");
     return _readRegisternb(FLUSH_RX, NULL, 0);
 };
 
 nrf24_status_t nRF24_flushTx(){
-    (void)printf("[NRF24] - Flushing TX\n");
+    (void)printf("[NRF24] - Flushing TX\r\n");
     return _readRegisternb(FLUSH_TX, NULL, 0);
 };
 
@@ -614,16 +616,16 @@ nrf24_status_t nRF24_write(const void *buffer, uint8_t length, const bool multic
 nrf24_status_t nRF24_fastWrite(const void *buffer, uint8_t length, const bool multicast){
     nrf24_status_t status = NRF24_OK;
 
-    uint32_t timer = machine->sleep.millis(); 
+    // Needed for linux: uint32_t timer = machine->sleep.millis(); 
 
     while ( _updateStatus() & _BV(TX_FULL)){
         if (nrf24_spi_status & NRF24_TX_DF){
             return NRF24_ERROR;
         }
 
-        if ((machine->sleep.millis() - timer) > 95u){
-            printf("help\n");
-        }
+        // Needed for linux: if ((machine->sleep.millis() - timer) > 95u){
+        //     printf("help\n");
+        // }
     }
 
     status = _writePayload(buffer, length, multicast);
@@ -656,8 +658,8 @@ static nrf24_status_t _initRadio() {
     uint8_t after_toggle;
     (void)_readRegister(FEATURE, &after_toggle);
 
-    printf("[nRF24] _initRadio: FEATURE before toggle: 0x%02X\n", before_toggle);
-    printf("[nRF24] _initRadio: FEATURE after_toggle: 0x%02X\n", after_toggle);
+    printf("[nRF24] _initRadio: FEATURE before toggle: 0x%02X\r\n", before_toggle);
+    printf("[nRF24] _initRadio: FEATURE after_toggle: 0x%02X\r\n", after_toggle);
 
     _is_p_variant = before_toggle == after_toggle;
     if (after_toggle) {
@@ -702,25 +704,31 @@ static nrf24_status_t _initRadio() {
 }
 
 static nrf24_status_t _toggleFeatures(void){
-    
+    nrf24_status_t status = NRF24_OK;
+
     (void)_beginTransaction();
 
-    uint8_t tx[2] = {ACTIVATE, 0x73}; 
-    uint8_t status[2];
+    uint8_t tx[2u] = {ACTIVATE, 0x73}; 
+    uint8_t rx[2u];
 
-    machine->spi.transfer(_spi, (const uint8_t *)&tx, (uint8_t *)&status, sizeof(tx));
+    (void)machine->spi.transfer(_spi, (const uint8_t *)&tx, (uint8_t *)&rx, sizeof(tx));
     
+    /* Stop compiler error -unused-variable */
+    (void)rx;
+
     (void)_endTransaction();
 
-    return NRF24_OK;
+    return status;
 }
 
 
 static nrf24_status_t _readRegister(uint8_t reg, uint8_t *result){
-    // uint8_t status = 0; 
+    nrf24_status_t status = NRF24_OK;
 
-    // (void)printf("[NRF24] - read_register(%02x) -> ", reg);
-    
+    #ifdef NRF24_DEBUG
+    (void)printf("[NRF24] - _readRegister(%02x) -> ", reg);
+    #endif 
+
     (void)_beginTransaction();
 
     uint8_t* prx = rx_buffer;
@@ -728,33 +736,37 @@ static nrf24_status_t _readRegister(uint8_t reg, uint8_t *result){
     *ptx++ = reg;
     *ptx++ = RF24_NOP; // Dummy operation, just for reading
 
-    machine->spi.transfer(_spi, (const uint8_t*)tx_buffer, rx_buffer, 2);
+    machine->spi.transfer(_spi, (const uint8_t*)tx_buffer, rx_buffer, 2u);
 
     nrf24_spi_status = *prx;   // status is 1st byte of receive buffer
     *result = *++prx; // result is 2nd byte of receive buffer
 
     (void)_endTransaction();
 
-    // (void)printf("%02x (%c%c%c%c %c%c%c%c) status: %02X\n", *result,
-    //         (*result & 0x80) ? '1' : '0',
-    //         (*result & 0x40) ? '1' : '0',
-    //         (*result & 0x20) ? '1' : '0',
-    //         (*result & 0x10) ? '1' : '0',
-    //         (*result & 0x08) ? '1' : '0',
-    //         (*result & 0x04) ? '1' : '0',
-    //         (*result & 0x02) ? '1' : '0',
-    //         (*result & 0x01) ? '1' : '0',
-    //         nrf24_spi_status
-    //     );
+    #ifdef NRF24_DEBUG
+    (void)printf("%02x (%c%c%c%c %c%c%c%c) status: %02X\r\n", *result,
+        (*result & 0x80) ? '1' : '0',
+        (*result & 0x40) ? '1' : '0',
+        (*result & 0x20) ? '1' : '0',
+        (*result & 0x10) ? '1' : '0',
+        (*result & 0x08) ? '1' : '0',
+        (*result & 0x04) ? '1' : '0',
+        (*result & 0x02) ? '1' : '0',
+        (*result & 0x01) ? '1' : '0',
+        nrf24_spi_status
+    );
+    #endif 
 
-    return NRF24_OK;
+    return status;
 };
 
 
 static nrf24_status_t _readRegisternb(uint8_t reg, uint8_t *buffer, size_t length) {
-    // uint8_t status = 0; 
+    nrf24_status_t status = NRF24_OK;
     
-    printf("[NRF24] - _readRegisternb(%02X, buff, %d)\n", reg, length);
+    #ifdef NRF24_DEBUG
+    (void)printf("[NRF24] - _readRegisternb(%02X, buff, %d)\r\n", reg, length);
+    #endif 
 
     (void)_beginTransaction();
     
@@ -777,14 +789,16 @@ static nrf24_status_t _readRegisternb(uint8_t reg, uint8_t *buffer, size_t lengt
 
     (void)_endTransaction();
 
-    return NRF24_OK;
+    return status;
 };
 
 
 static nrf24_status_t _writeRegister(uint8_t reg, const uint8_t value){
     nrf24_status_t status = NRF24_OK; 
-
-    (void)printf("[NRF24] - write_register(%02X,%02X)\n", reg, value);
+    
+    #ifdef NRF24_DEBUG
+    (void)printf("[NRF24] - _writeRegister(%02X,%02X)\r\n", reg, value);
+    #endif
 
     (void)_beginTransaction();
 
@@ -805,7 +819,9 @@ static nrf24_status_t _writeRegister(uint8_t reg, const uint8_t value){
 static nrf24_status_t _writeRegisternb(uint8_t reg, const uint8_t* buffer, uint8_t length){
     nrf24_status_t status = NRF24_OK;
 
-    (void)printf("[NRF24] - _writeRegisternb(%02X, buff, %d)\n", reg, length);
+    #ifdef NRF24_DEBUG
+    (void)printf("[NRF24] - _writeRegisternb(%02X, buff, %d)\r\n", reg, length);
+    #endif 
 
     (void)_beginTransaction();
     uint8_t* prx = rx_buffer;
@@ -831,7 +847,7 @@ static nrf24_status_t _writePayload(const void *buffer, uint8_t length, const bo
 
     const uint8_t *current = (const uint8_t *)buffer;  
     
-    uint8_t blank_len = !length ? 1 : 0;
+    uint8_t blank_len = !length ? 1u : 0u;
     if (length > NRF24_MAX_PAYLOAD_SIZE){
         return NRF24_ARG_INVALID;
     } 
@@ -841,46 +857,48 @@ static nrf24_status_t _writePayload(const void *buffer, uint8_t length, const bo
         blank_len = (_cfg->payloadSize - length);
     }
     else {
-        length = rf24_min(length, (32));
+        length = rf24_min(length, NRF24_MAX_PAYLOAD_SIZE);
     }
 
-    // printf("[Writing %u bytes %u blanks]\n", length, blank_len);
+    #ifdef NRF24_DEBUG
+    printf("[NRF24] - _writePayload(Writing %u bytes %u blanks)\r\n", length, blank_len);
+    #endif 
 
     _beginTransaction();
     uint8_t* prx = rx_buffer;
     uint8_t* ptx = tx_buffer;
     uint8_t size;
-    size = (length + blank_len + 1); // Add register value to transmit buffer
+    size = (length + blank_len + 1u); // Add register value to transmit buffer
 
     if (multicast){
         *ptx++ = W_TX_PAYLOAD_NO_ACK;
     } else{
         *ptx++ = W_TX_PAYLOAD;
     }
+
     while (length--) {
         *ptx++ = *current++;
     }
 
     while (blank_len--) {
-        *ptx++ = 0;
+        *ptx++ = 0u;
     }
 
-    // size = (length + blank_len + 1); // Size has been lost during while, re affect
-
-    machine->spi.transfer(_spi, tx_buffer, rx_buffer, size);
-
+    (void)machine->spi.transfer(_spi, tx_buffer, rx_buffer, size);
+    
     nrf24_spi_status = *prx++;
-    _endTransaction();
+
+    (void)_endTransaction();
 
     return status; 
 };
 
 static nrf24_status_t _readPayload(void *buffer, uint8_t length){
     nrf24_status_t status = NRF24_OK; 
+    uint8_t blank_len = 0u;
 
     uint8_t *current = (uint8_t *)buffer;  
-    
-    uint8_t blank_len = 0;
+
     if (length > NRF24_MAX_PAYLOAD_SIZE){
         return NRF24_ARG_INVALID;
     } 
@@ -890,27 +908,28 @@ static nrf24_status_t _readPayload(void *buffer, uint8_t length){
         blank_len = (_cfg->payloadSize - length);
     }
     else {
-        length = rf24_min(length, (32));
+        length = rf24_min(length, NRF24_MAX_PAYLOAD_SIZE);
     }
 
-    _beginTransaction();
+    (void)_beginTransaction();
+
     uint8_t* prx = rx_buffer;
     uint8_t* ptx = tx_buffer;
-    uint8_t size;
-    size = (length + blank_len + 1); // Add register value to transmit buffer
+
+    uint8_t size = (length + blank_len + 1u); // Add register value to transmit buffer
 
     *ptx++ = R_RX_PAYLOAD;
     while (--size) {
         *ptx++ = RF24_NOP;
     }
 
-    size = (length + blank_len + 1); // Size has been lost during while, re affect
+    size = (length + blank_len + 1u); // Size has been lost during while, re affect
 
     machine->spi.transfer(_spi, tx_buffer, rx_buffer, size);
 
     nrf24_spi_status = *prx++; // 1st byte is status
 
-    if (length > 0) {
+    if (length > 0u) {
         // Decrement before to skip 1st status byte
         while (--length) {
             *current++ = *prx++;
@@ -918,25 +937,26 @@ static nrf24_status_t _readPayload(void *buffer, uint8_t length){
 
         *current = *prx;
     }
-    _endTransaction();
+
+    (void)_endTransaction();
     
     return status; 
 };
 
 static nrf24_status_t _beginTransaction() {
-    machine->spi.beginTransaction(_spi);
-    csn(LOW);
+    (void)machine->spi.beginTransaction(_spi);
+    (void)csn(LOW);
     return NRF24_OK;
 }
 
 static nrf24_status_t _endTransaction() {
-    csn(HIGH);
-    machine->spi.endTransaction(_spi);
+    (void)csn(HIGH);
+    (void)machine->spi.endTransaction(_spi);
     return NRF24_OK;
 }
 
 static uint8_t _updateStatus(void){
-    _readRegisternb(RF24_NOP, NULL, 0);
+    (void)_readRegisternb(RF24_NOP, NULL, 0);
     return nrf24_spi_status;
 }
 
@@ -972,13 +992,13 @@ static void _dataRateConversion(nrf24_datarate_t rate, uint8_t *bits){
 
 static void csn(bool level){
     if (_cfg != NULL){
-        machine->gpio.write(_cfg->gpio.csn, level);
+        (void)machine->gpio.write(_cfg->gpio.csn, level);
     }
 }
 
 static void ce(bool level){
     if (_cfg != NULL){
-        machine->gpio.write(_cfg->gpio.ce, level);
+        (void)machine->gpio.write(_cfg->gpio.ce, level);
     }
 }
 

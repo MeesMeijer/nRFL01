@@ -9,8 +9,7 @@
 extern "C" {
 #endif
 
-// ====================== SPI ======================
-typedef struct spi_handle spi_handle_t; // forward declare
+typedef struct spi_handle spi_handle_t;
 typedef struct {
     // @brief Malloc and start the bus
     spi_handle_t* (*open)(uint8_t bus, uint32_t freq_hz, uint8_t mode);
@@ -29,28 +28,30 @@ typedef struct {
     void (*close)(spi_handle_t *h);
 } HAL_SPI_t;
 
-// ====================== GPIO ======================
 
 #define LOW (uint8_t)0u
 #define HIGH (uint8_t)1u
 
 typedef struct {
-    int (*config)(int pin, bool output);
-    int (*write)(int pin, bool level);
-    bool (*read)(int pin);
+    int (*config)(uint8_t pin, bool output);
+    int (*write)(uint8_t pin, bool level);
+    bool (*read)(uint8_t pin);
 } HAL_GPIO_t;
 
-// ====================== Sleep ======================
 typedef struct {
     void (*ms)(uint32_t ms);
-    uint32_t (*millis)(void);
+    void (*us)(uint32_t us);
 } HAL_Sleep_t;
 
-// ====================== Machine Root ======================
+typedef struct {
+    uint32_t(*millis)(void);
+} HAL_Time_t; 
+
 typedef struct {
     HAL_SPI_t   spi;
     HAL_GPIO_t  gpio;
     HAL_Sleep_t sleep;
+    HAL_Time_t  time; 
 } machine_t;
 
 extern const machine_t *machine;
