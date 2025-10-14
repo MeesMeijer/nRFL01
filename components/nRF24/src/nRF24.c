@@ -700,7 +700,22 @@ static nrf24_status_t _initRadio() {
 
     (void)nRF24_powerUp();
     
-    return (config_reg == (_BV(EN_CRC) | _BV(CRCO) | _BV(PWR_UP))) ? NRF24_OK : NRF24_ERROR;
+    #ifdef NRF24_DEBUG
+    (void)printf("[NRF24] - config_req after powerup: %02x (%c%c%c%c %c%c%c%c) status: %02X\r\n", config_reg,
+        (config_reg & 0x80) ? '1' : '0',
+        (config_reg & 0x40) ? '1' : '0',
+        (config_reg & 0x20) ? '1' : '0',
+        (config_reg & 0x10) ? '1' : '0',
+        (config_reg & 0x08) ? '1' : '0',
+        (config_reg & 0x04) ? '1' : '0',
+        (config_reg & 0x02) ? '1' : '0',
+        (config_reg & 0x01) ? '1' : '0',
+        nrf24_spi_status
+    );
+    #endif 
+    
+    /* Mask the wanted bits. bit 0 indicates PTX or PRX. Ignore.  */
+    return ((config_reg & 0b1110) == (_BV(EN_CRC) | _BV(CRCO) | _BV(PWR_UP))) ? NRF24_OK : NRF24_ERROR;
 }
 
 static nrf24_status_t _toggleFeatures(void){

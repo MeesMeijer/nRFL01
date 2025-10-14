@@ -16,20 +16,19 @@
 
 
 /* Define the wrapper to use.  */
-#if defined(__CC_ARM) || defined(STM32F756xx)
+#if defined(STM32F756xx)
 #define USE_STM32
-#elif defined(ESP_PLATFORM) 
+#elif defined(ESP_PLATFORM)
 #define USE_ESP_IDF
-#else 
-    /* Default to USE_ESP_IDF if no platform is defined */
-    #define USE_ESP_IDF
+#elif defined(LUCKFOX)
+#define USE_LINUX_LUCKFOX
 #endif 
 
 /**
  * @brief Toggle debug mode, this will print all read/write spi transactions.
  * 
  */
-#define NRF24_DEBUG
+// #define NRF24_DEBUG
 
 
 #endif 
