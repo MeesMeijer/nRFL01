@@ -12,6 +12,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
+set(USE_STM32 ON)
+add_compile_definitions(USE_STM32)
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
