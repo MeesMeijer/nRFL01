@@ -16,11 +16,11 @@
 
 
 /* Define the wrapper to use.  */
-#if defined(STM32F756xx)
+#if defined(CMAKE_STM32)
 #define USE_STM32
-#elif defined(ESP_PLATFORM)
+#elif defined(CMAKE_ESP_IDF)
 #define USE_ESP_IDF
-#elif defined(LUCKFOX)
+#elif defined(CMAKE_LUCKFOX)
 #define USE_LINUX_LUCKFOX
 #endif 
 

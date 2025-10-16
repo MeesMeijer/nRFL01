@@ -40,7 +40,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(cmake/stm32cubemx)
 
 # Add your custom CMake project directory here
-add_subdirectory(../../../components/nRF24 ${CMAKE_BINARY_DIR}/nRF24)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../../../../nRF24 ${CMAKE_BINARY_DIR}/nRF24)
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE

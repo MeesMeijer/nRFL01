@@ -9,7 +9,7 @@ set(CMAKE_C_COMPILER ${CMAKE_SOURCE_DIR}/../sdk/tools/linux/toolchain/arm-rockch
 # Set the NRF24 Lib
 set(USE_LINUX_LUCKFOX ON)
 add_compile_definitions(USE_LINUX_LUCKFOX)
-set(NRF24_LIB_COMPONENT ${CMAKE_SOURCE_DIR}/../../../../components/nRF24)
+set(NRF24_LIB_COMPONENT ${CMAKE_SOURCE_DIR}/../../../../nRF24)
 
 
 project(${CMAKE_PROJECT_NAME})

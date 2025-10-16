@@ -1,7 +1,7 @@
 
 # Decide which platform to build for. 
 
-if(USE_ESP_IDF)
+if(ESP_PLATFORM)
     idf_component_register(
         SRCS 
             "src/nRF24.c" 
@@ -22,6 +22,10 @@ elseif(USE_STM32)
         stm32cubemx
     )
 
+    target_include_directories(nRF24 PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
 elseif(USE_LINUX_LUCKFOX)
     add_library(nRF24 STATIC
         src/nRF24.c
@@ -32,11 +36,10 @@ elseif(USE_LINUX_LUCKFOX)
         USE_LINUX_LUCKFOX
     )
 
-
+    target_include_directories(nRF24 PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 else()
     message(FATAL_ERROR "No supported platform selected. Define one of: ESP_PLATFORM, USE_STM32, LUCKFOX")
 endif()
 
-target_include_directories(nRF24 PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
