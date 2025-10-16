@@ -1,0 +1,1 @@
+Add Docs for stm32 visual studio plugin that works via CMAKE. 
