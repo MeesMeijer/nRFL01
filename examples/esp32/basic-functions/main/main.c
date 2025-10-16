@@ -1,6 +1,7 @@
 
 #include "stdio.h"
 #include "stdlib.h"
+#include "string.h"
 
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
@@ -108,6 +109,7 @@ void app_main(void){
 };
 
 void mainTask(void *arg){
+    
 
     TickType_t lastTick = xTaskGetTickCount();
     double accumulatedBytes = 0;
@@ -116,31 +118,25 @@ void mainTask(void *arg){
         (void)nRF24_startListening(); 
         (void)nRF24_flushRx();
 
-        uint8_t *buffer = (uint8_t *)malloc((sizeof(uint8_t) * SIZE)); 
+        uint8_t *buffer = (uint8_t *)malloc((sizeof(uint8_t) * SIZE + 1u)); 
         for (;;){
             if (nRF24_available()){
                 (void)nRF24_read(buffer, SIZE);
-                (void)printf("Received %d bytes. \n\t:", SIZE);
-                for (int i = 0; i < 10; i++) {
-                    printf("%02X ", buffer[i]);
-                }
-                (void)printf("\n");
+                totalBytes += SIZE;
             }
-            /* Read as fast as possible, but wait 2 ticks for the WDT. */
-            (void)vTaskDelay(2u);
         }
     }
     else {
         (void)nRF24_flushTx();
 
         uint8_t  buff_item = 0u;
-        uint8_t *buffer    = (uint8_t *)malloc(sizeof(uint8_t) * SIZE);
+        uint8_t *buffer    = (uint8_t *)malloc(sizeof(uint8_t) * SIZE + 1u);
 
         for (;;){
             TickType_t now = xTaskGetTickCount();
             accumulatedBytes += SIZE;
 
-            /* Calculate the needed delay to achive a bytes stream of 44100 bytes/second */
+            /* Calculate the needed delay to achieve a bytes stream of 44100 bytes/second */
             double elapsedSec = (now - lastTick) * (1.0 / configTICK_RATE_HZ);
             double expectedTime = accumulatedBytes / 44100u;
             if (expectedTime > elapsedSec) {
@@ -160,10 +156,7 @@ void mainTask(void *arg){
             }
 
             /* Create a stream of 32 bytes that loop through 0-250 */
-            // for (int i = 0; i < SIZE; i++){
-            //     buffer[i] = buff_item;
-            // }
-            (void)memset(&buffer, buff_item, SIZE);
+            (void)memset(buffer, buff_item, SIZE);
             buff_item = (buff_item + 1u) % 250u; 
             
             (void)nRF24_fastWrite(buffer, SIZE, false);
